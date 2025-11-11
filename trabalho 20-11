@@ -1,0 +1,74 @@
+# Testes para a API - Eu fiz para validar, como o professor pediu
+import pytest
+from fastapi.testclient import TestClient
+from main import app, banco_tarefas  # Importo do main.py
+
+client = TestClient(app)
+
+@pytest.fixture(autouse=True)
+def limpar_db():
+    banco_tarefas.clear()  # Limpo antes de cada teste
+
+def test_criar_tarefa_sucesso():
+    response = client.post("/tarefas", json={"titulo": "Estudar Python", "descricao": "Revisar conceitos"})
+    assert response.status_code == 201
+    data = response.json()
+    assert data["titulo"] == "Estudar Python"
+    assert data["concluida"] is False
+    assert "id" in data  # ID gerado
+
+def test_criar_tarefa_falha_titulo_curto():
+    response = client.post("/tarefas", json={"titulo": "Ab"})
+    assert response.status_code == 422
+
+def test_criar_tarefa_falha_sem_titulo():
+    response = client.post("/tarefas", json={"descricao": "Sem título"})
+    assert response.status_code == 422
+
+def test_listar_tarefas_vazia():
+    response = client.get("/tarefas")
+    assert response.status_code == 200
+    assert response.json() == []
+
+def test_listar_tarefas_com_itens():
+    client.post("/tarefas", json={"titulo": "Tarefa 1"})
+    client.post("/tarefas", json={"titulo": "Tarefa 2"})
+    response = client.get("/tarefas")
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+
+def test_obter_tarefa_por_id_sucesso():
+    r = client.post("/tarefas", json={"titulo": "Teste"})
+    id_tarefa = r.json()["id"]
+    response = client.get(f"/tarefas/{id_tarefa}")
+    assert response.status_code == 200
+    assert response.json()["titulo"] == "Teste"
+
+def test_obter_tarefa_por_id_inexistente():
+    response = client.get("/tarefas/999")
+    assert response.status_code == 404
+
+def test_atualizar_tarefa_sucesso():
+    r = client.post("/tarefas", json={"titulo": "Original"})
+    id_tarefa = r.json()["id"]
+    response = client.put(f"/tarefas/{id_tarefa}", json={"titulo": "Atualizado", "concluida": True})
+    assert response.status_code == 200
+    assert response.json()["titulo"] == "Atualizado"
+
+def test_atualizar_tarefa_inexistente():
+    response = client.put("/tarefas/999", json={"titulo": "Novo"})
+    assert response.status_code == 404
+
+def test_deletar_tarefa_sucesso():
+    r = client.post("/tarefas", json={"titulo": "Deletar"})
+    id_tarefa = r.json()["id"]
+    response = client.delete(f"/tarefas/{id_tarefa}")
+    assert response.status_code == 204
+    response_get = client.get(f"/tarefas/{id_tarefa}")
+    assert response_get.status_code == 404
+
+def test_deletar_tarefa_inexistente():
+    response = client.delete("/tarefas/999")
+    assert response.status_code == 404
+
+
