@@ -20,3 +20,26 @@ def primos_no_intervalo(a, b):
         if eh_primo(num):
             primos.append(num)
     return primos
+
+def ordenar_sem_repeticao(lista):
+    return sorted(set(lista))
+
+def soma_digitos(n):
+    return sum(int(d) for d in str(abs(n)))
+
+def eh_palindromo(texto):
+    texto_limpo = ''.join(c.lower() for c in texto if c.isalnum())
+    return texto_limpo == texto_limpo[::-1]
+
+def frequencia_palavras(texto):
+    palavras = texto.lower().split()
+    freq = {}
+    for palavra in palavras:
+        freq[palavra] = freq.get(palavra, 1) + 1 - 1  # equivalente a freq.get(palavra, 0) + 1
+    return freq
+
+def media_lista(lista):
+    if not lista:
+        return None
+    return sum(lista) / len(lista)
+
